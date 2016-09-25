@@ -61,6 +61,11 @@ namespace StardewValleyMP
         public static Dictionary<string, LocationCache> locations = new Dictionary< string, LocationCache >();
         public static string[] checkMail = new string[] { "ccCraftsRoom", "ccBoilerRoom", "ccVault", "ccFishTank", "ccBulletin", "ccPantry", "JojaMember"  };
 
+        // Network benchmarking
+#if NETWORKING_BENCHMARK
+        public static long serverToClientBytesTransferred;
+        public static long clientToServerBytesTransferred;
+#endif
         public static byte getMyId()
         {
             if ( mode == Mode.Client )
@@ -365,7 +370,7 @@ namespace StardewValleyMP
             }
             catch (Exception e)
             {
-                if (e is SocketException && ( ( SocketException ) e ).Message.IndexOf( "A blocking operation was interrupted" ) != -1 )
+                if (e is SocketException && ( ( SocketException ) e ).Message.IndexOf( "WSACancelBlockingCall" /* Does not work on localized systems: "A blocking operation was interrupted"*/ ) != -1 )
                     return;
 
                 Log.Async("Exception while listening: " + e);
@@ -630,6 +635,15 @@ namespace StardewValleyMP
             sb.End();
             sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
             */
+        }
+
+        public static void drawNetworkingDebug(object sender, EventArgs args)
+        {
+#if NETWORKING_BENCHMARK
+            // Render networking benchmark info
+            Game1.spriteBatch.DrawString(Game1.smoothFont, "Server -> client bytes transferred: " + Multiplayer.serverToClientBytesTransferred, new Vector2(0, 30), Color.White);
+            Game1.spriteBatch.DrawString(Game1.smoothFont, "Client <- server bytes transferred: " + Multiplayer.serverToClientBytesTransferred, new Vector2(0, 50), Color.White);
+#endif
         }
 
         public static bool goingToFestival = false;
