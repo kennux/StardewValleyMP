@@ -214,6 +214,7 @@ namespace StardewValleyMP
                             if (animal.Key == id)
                             {
                                 updateAnimal(farm, animal.Value, state);
+                                return;
                             }
                         }
                     }
@@ -274,7 +275,7 @@ namespace StardewValleyMP
         {
             foreach (NPC npc in loc.characters)
             {
-                if (npc.name == "Junimo" || npc.name == "Green Slime") continue;
+                if (npc.name == "Junimo" || npc.name == "Green Slime" || npc.name == "Frost Helly" || npc.IsMonster) continue;
                 if ( npc.isMarried() && npc.name != Game1.player.spouse )
                 {
                     continue;

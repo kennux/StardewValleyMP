@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using System.Net;
 using System.Net.Sockets;
 using StardewModdingAPI;
 using StardewValley;
@@ -48,7 +49,7 @@ namespace StardewValleyMP
     class Multiplayer
     {
         public const string DEFAULT_PORT = "24644";
-        public const byte PROTOCOL_VERSION = 1;
+        public const byte PROTOCOL_VERSION = 2;
         public const bool COOP = true;
 
         public static Mode mode = Mode.Singleplayer;
@@ -58,6 +59,7 @@ namespace StardewValleyMP
         public static Action<Packet> sendFunc;
 
         public static Dictionary<string, LocationCache> locations = new Dictionary< string, LocationCache >();
+        public static string[] checkMail = new string[] { "ccCraftsRoom", "ccBoilerRoom", "ccVault", "ccFishTank", "ccBulletin", "ccPantry", "JojaMember"  };
 
         public static byte getMyId()
         {
@@ -330,59 +332,93 @@ namespace StardewValleyMP
             }
         }
 
-        public static bool startHost()
+        public static  String ipStr = "127.0.0.1";
+        public static  String portStr = DEFAULT_PORT;
+        public static  TcpListener listener = null;
+
+        public static bool lobby = true;
+        public static bool problemStarting = false;
+        public static void startHost()
         {
-            string portStr = DEFAULT_PORT;
-            if (!Util.stringDialog("Listen on port", ref portStr)) return false;
+            mode = Mode.Host;
+            problemStarting = false;
 
-            int port = Int32.Parse(portStr);
-            TcpListener listener = new TcpListener( port );
-            listener.Start();
-
-            client = null;
-            server = new Server();
-            while (true)
+            try
             {
-                Log.Async( "Waiting for connection..." );
-                Socket socket = listener.AcceptSocket();
-                NetworkStream stream = new NetworkStream(socket);
-                server.addClient(socket, stream);
+                int port = Int32.Parse(portStr);
+                // http://stackoverflow.com/questions/1777629/how-to-listen-on-multiple-ip-addresses
+                listener = new TcpListener(IPAddress.IPv6Any, port);
+                listener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                listener.Start();
 
-                if (Util.yesNoDialog("There are currently " + server.getClientCount().ToString() + " other players.", "Ready to play?"))
+                client = null;
+                server = new Server();
+
+                while (true)
                 {
-                    break;
+                    Log.Async("Waiting for connection...");
+                    Socket socket = listener.AcceptSocket();
+                    NetworkStream stream = new NetworkStream(socket);
+                    server.addClient(socket, stream);
+                }
+
+            }
+            catch (Exception e)
+            {
+                if (e is SocketException && ( ( SocketException ) e ).Message.IndexOf( "A blocking operation was interrupted" ) != -1 )
+                    return;
+
+                Log.Async("Exception while listening: " + e);
+                ChatMenu.chat.Add( new ChatEntry( null, "Exception while listening for clients. Check your log files for more details" ) );
+                problemStarting = true;
+            }
+            finally
+            {
+                if ( listener != null )
+                {
+                    listener.Stop();
+                    listener = null;
                 }
             }
-
-            listener.Stop();
-
-            return true;
         }
 
-        public static bool startClient()
+        public static void startClient()
         {
-            string ip = "127.0.0.1";
-            string port = Multiplayer.DEFAULT_PORT;
-            if (!Util.stringDialog("Connect to IP", ref ip)) return false;
-            if (!Util.stringDialog("Connect on port", ref port)) return false;
+            mode = Mode.Client;
+            problemStarting = false;
 
-            Log.Async("Connecting to " + ip + ":" + port);
-            TcpClient socket = new TcpClient(ip, Int32.Parse(port));
+            try
+            {
+                Log.Async("Connecting to " + ipStr + ":" + portStr);
+                TcpClient socket = new TcpClient(ipStr, Int32.Parse(portStr));
+                ChatMenu.chat.Add(new ChatEntry(null, "Connection established."));
 
-            client = new Client(socket);
-            server = null;
-
-            return true;
+                client = new Client(socket);
+                server = null;
+            }
+            catch ( Exception e )
+            {
+                Log.Async("Exception while connecting: " + e);
+                ChatMenu.chat.Add(new ChatEntry(null, "Exception while connecting to server. Check your log file for more details."));
+                problemStarting = true;
+            }
         }
 
         private static bool didNewDay = false;
         public static bool prevFreezeControls = false;
         public static bool sentNextDayPacket = false;
+        public static long prevLatestId;
 
         private static int prevDuhu, prevHul, prevLul;
         public static void update()
         {
             if (Multiplayer.mode == Mode.Singleplayer) return;
+
+            if ( MultiplayerUtility.latestID > prevLatestId )
+            {
+                sendFunc(new LatestIdPacket());
+            }
+            prevLatestId = MultiplayerUtility.latestID;
 
             //Log.Async("pos:" + Game1.player.position.X + " " + Game1.player.position.Y);
             // Clients sometimes get stuck in the top-right corner and can't move on second day+

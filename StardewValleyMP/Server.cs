@@ -17,6 +17,7 @@ namespace StardewValleyMP
     public class Server
     {
         public bool playing = false;
+        public bool delayUpdates = false;
 
         public Server()
         {
@@ -26,7 +27,7 @@ namespace StardewValleyMP
         private DateTime lastTimeSync;
         public void update()
         {
-            for (int i = 0; i < clients.Count; ++i )
+            for (int i = 0; !delayUpdates && i < clients.Count; ++i )
             {
                 clients[i].update();
                 if ( !clients[ i ].connected() )
@@ -36,6 +37,9 @@ namespace StardewValleyMP
                     continue;
                 }
             }
+
+            if (Multiplayer.lobby) return;
+
             if ( clients.Count == 0 )
             {
                 ChatMenu.chat.Add(new ChatEntry(null, "No more clients."));
@@ -82,10 +86,10 @@ namespace StardewValleyMP
         public void getPlayerInfo()
         {
             Log.Async("Getting information on the clients.");
-            foreach ( Client client in clients )
+            /*foreach ( Client client in clients )
             {
                 client.send(new YourIDPacket(client.id));
-            }
+            }*/
 
             // Wait for responses
             foreach ( Client client in clients )
@@ -240,7 +244,7 @@ namespace StardewValleyMP
                 if (!socket.Connected)
                 {
                     ChatMenu.chat.Add(new ChatEntry(null, ( farmer != null ? farmer.name : ( "Client " + id ) ) + " lost connection to the server."));
-                    if ( farmer != null )
+                    if ( farmer != null && farmer.currentLocation != null )
                     {
                         farmer.currentLocation.farmers.Remove(farmer);
                     }

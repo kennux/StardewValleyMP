@@ -46,6 +46,22 @@ namespace StardewValleyMP.Packets
 
             //Farmer old = client.farmer;
             SaveGame theirs = (SaveGame)SaveGame.serializer.Deserialize(Util.stringStream(xml));
+
+            if (client.farmer == null)
+            {
+                ChatMenu.chat.Add(new ChatEntry(null, theirs.player.name + " has connected."));
+                server.broadcast(new ChatPacket(255, theirs.player.name + " has connected."), client.id);
+
+                String str = "Currently playing: ";
+                str += NewLoadMenu.pendingSelected.name;
+                foreach ( Server.Client other in server.clients )
+                {
+                    if (other == client || other.farmer == null) continue;
+                    str += ", " + other.farmer.name;
+                }
+                client.send(new ChatPacket(255, str));
+            }
+
             client.farmerXml = Util.serialize<Farmer>(theirs.player);
             client.farmer = theirs.player;
             client.farmer.uniqueMultiplayerID += 1 + client.id;
@@ -88,7 +104,23 @@ namespace StardewValleyMP.Packets
 
             fixPetDuplicates(theirs);
 
-            Multiplayer.fixLocations(theirs.locations, client.farmer, addFixedLocationToOurWorld);
+            foreach (string mail in Multiplayer.checkMail)
+            {
+                if (client.farmer.mailForTomorrow.Contains(mail))
+                {
+                    if (!SaveGame.loaded.player.mailForTomorrow.Contains(mail))
+                        SaveGame.loaded.player.mailForTomorrow.Add(mail);
+                    if (Game1.player != null && !Game1.player.mailForTomorrow.Contains(mail))
+                        Game1.player.mailForTomorrow.Add(mail);
+                }
+                if (client.farmer.mailForTomorrow.Contains(mail + "%&NL&%"))
+                {
+                    if (!SaveGame.loaded.player.mailForTomorrow.Contains(mail + "%&NL&%"))
+                        SaveGame.loaded.player.mailForTomorrow.Add(mail + "%&NL&%");
+                    if (Game1.player != null && !Game1.player.mailForTomorrow.Contains(mail + "%&NL&%"))
+                        Game1.player.mailForTomorrow.Add(mail + "%&NL&%");
+                }
+            }
 
             client.stage = Server.Client.NetStage.WaitingForStart;
         }
