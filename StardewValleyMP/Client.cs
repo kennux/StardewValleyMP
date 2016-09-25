@@ -81,7 +81,7 @@ namespace StardewValleyMP
                 return;
             }
 
-            if (tempStopUpdating) return;
+            if (tempStopUpdating || SaveGame.loaded == null) return;
             if (stage != NetStage.Waiting)
             {
                 processDelayedPackets();

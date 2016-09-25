@@ -40,29 +40,7 @@ namespace StardewValleyMP.Packets
         public override void process(Client client)
         {
             client.id = clientId;
-
-            /*string text2 = NewLoadMenu.pendingSelected.name;//SaveGame.loaded.player.Name;
-            string text3 = text2;
-            for (int i = 0; i < text3.Length; i++)
-            {
-                char c = text3[i];
-                if (!char.IsLetterOrDigit(c))
-                {
-                    text2 = text2.Replace(string.Concat(c), "");
-                }
-            }
-            string text4 = text2 + "_" + Game1.uniqueIDForThisGame;
-            String saveFile = NewLoadMenu.pendingSelected.favoriteThing;//SaveGame.loaded.uniqueIDForThisGame;
-            string savePath = Path.Combine(new string[]
-			    {
-				    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-				    "StardewValley",
-				    "Saves",
-				    saveFile,
-				    saveFile,//"SaveGameInfo"
-			    });
-                */
-
+            
             string xml = null;
             using (MemoryStream ms = new MemoryStream())
             {
