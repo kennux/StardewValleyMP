@@ -462,6 +462,7 @@ namespace StardewValleyMP.Vanilla
                                 if (Multiplayer.mode == Mode.Client)
                                 {
                                     ipBox = new TextBox(Game1.content.Load<Texture2D>("LooseSprites\\textBox"), null, Game1.smallFont, Game1.textColor);
+                                    ipBox.Width += 50; // Some IP-Addresses dont fit in there on standard size .....
                                     ipBox.X = buttonX + buttonW / 2 - (SpriteText.getWidthOfString("IP Address:") + ipBox.Width + 20) / 2 + SpriteText.getWidthOfString("IP Address:") + 20;
                                     ipBox.Y = buttonY1 + buttonH / 2 - ipBox.Height / 2;
                                     ipBox.Text = Multiplayer.ipStr;
