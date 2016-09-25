@@ -40,8 +40,8 @@ namespace StardewValleyMP.Packets
         public override void process(Client client)
         {
             client.id = clientId;
-            
-            string text2 = NewLoadMenu.pendingSelected.name;//SaveGame.loaded.player.Name;
+
+            /*string text2 = NewLoadMenu.pendingSelected.name;//SaveGame.loaded.player.Name;
             string text3 = text2;
             for (int i = 0; i < text3.Length; i++)
             {
@@ -61,7 +61,14 @@ namespace StardewValleyMP.Packets
 				    saveFile,
 				    saveFile,//"SaveGameInfo"
 			    });
-            String xml = File.ReadAllText(savePath);
+                */
+
+            string xml = null;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                SaveGame.serializer.Serialize(ms, SaveGame.loaded);
+                xml = Encoding.ASCII.GetString(ms.ToArray());
+            }
             ClientFarmerDataPacket farmerData = new ClientFarmerDataPacket(xml);
             client.send(farmerData);
 
