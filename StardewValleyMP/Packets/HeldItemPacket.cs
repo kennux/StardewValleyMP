@@ -92,6 +92,7 @@ namespace StardewValleyMP.Packets
                 farmer.showCarrying();
                 farmer.ActiveObject = ( big ? new StardewValley.Object(Vector2.Zero, index, false) : new StardewValley.Object(Vector2.Zero, index, 1));
             }*/
+            farmer.completelyStopAnimatingOrDoingAction();
             farmer.CurrentToolIndex = tool;
             /*if (farmer.CurrentTool != null)
             {

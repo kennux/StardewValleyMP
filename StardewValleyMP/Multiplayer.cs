@@ -463,10 +463,12 @@ namespace StardewValleyMP
                             Thread.Sleep(5);
                         }
 
-                        MemoryStream tmp = new MemoryStream();
-                        SaveGame.serializer.Serialize(tmp, SaveGame.loaded);
-                        sendFunc(new NextDayPacket());
-                        sendFunc(new ClientFarmerDataPacket(Encoding.UTF8.GetString(tmp.ToArray())));
+                        using (MemoryStream tmp = new MemoryStream())
+                        {
+                            SaveGame.serializer.Serialize(tmp, SaveGame.loaded);
+                            sendFunc(new NextDayPacket());
+                            sendFunc(new ClientFarmerDataPacket(Encoding.UTF8.GetString(tmp.ToArray())));
+                        }
                         //SaveGame.loaded = oldLoaded;
                     }
                     sentNextDayPacket = true;
