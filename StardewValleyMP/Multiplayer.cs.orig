@@ -370,8 +370,12 @@ namespace StardewValleyMP
             }
             catch (Exception e)
             {
+<<<<<<< HEAD
+                if (e is SocketException && ( ( SocketException ) e ).Message.IndexOf( "WSACancelBlockingCall" /* Does not work on localized systems: "A blocking operation was interrupted"*/ ) != -1 )
+=======
                 if (e is SocketException && ( ( ( SocketException ) e ).Message.IndexOf( "A blocking operation was interrupted" ) != -1 ||
                                               ( ( SocketException ) e ).Message.IndexOf( "WSACancelBlockingCall" ) != -1 ) )
+>>>>>>> c4cb7d5e5a4ee196d1c9f41cd12ee1eefb9e5365
                     return;
 
                 Log.Async("Exception while listening: " + e);
