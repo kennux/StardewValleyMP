@@ -40,17 +40,6 @@ namespace StardewValleyMP.Packets
         public override void process(Client client)
         {
             client.id = clientId;
-            
-            string xml = null;
-            using (MemoryStream ms = new MemoryStream())
-            {
-                SaveGame.serializer.Serialize(ms, SaveGame.loaded);
-                xml = Encoding.ASCII.GetString(ms.ToArray());
-            }
-            ClientFarmerDataPacket farmerData = new ClientFarmerDataPacket(xml);
-            client.send(farmerData);
-
-            client.stage = Client.NetStage.WaitingForWorldData;
         }
     }
 }
