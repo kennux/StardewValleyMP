@@ -39,6 +39,7 @@ namespace StardewValleyMP
         public Client( TcpClient theSocket )
         {
             socket = theSocket;
+            socket.NoDelay = false;
             stream = socket.GetStream();
             receiver = new Thread(receiveAndQueue);
             receiver.Start();

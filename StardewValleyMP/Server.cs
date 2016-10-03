@@ -211,6 +211,7 @@ namespace StardewValleyMP
                 server = theServer;
                 id = theId;
                 socket = theSocket;
+                socket.NoDelay = false;
                 stream = theStream;
                 receiver = new Thread( receiveAndQueue );
                 receiver.Start();
