@@ -66,10 +66,12 @@ namespace StardewValleyMP.Packets
             {
                 mine.player.farmName = world.player.farmName;
                 mine.player.money = world.player.money;
+                mine.player.clubCoins = world.player.clubCoins;
                 mine.player.totalMoneyEarned = world.player.totalMoneyEarned;
                 mine.player.hasRustyKey = world.player.hasRustyKey;
                 mine.player.hasSkullKey = world.player.hasSkullKey;
                 mine.player.hasClubCard = world.player.hasClubCard;
+                // Should I sync dark talisman / magic ink?
                 mine.player.dateStringForSaveGame = world.player.dateStringForSaveGame;
             }
             world.player = mine.player;
@@ -105,6 +107,8 @@ namespace StardewValleyMP.Packets
                 world.stats = mine.stats;
                 world.incubatingEgg = mine.incubatingEgg;
                 world.dailyLuck = mine.dailyLuck;
+                world.whichFarm = mine.whichFarm;
+                world.shouldSpawnMonsters = mine.shouldSpawnMonsters;
             }
                 world.mine_mineLevel = mine.mine_mineLevel;
                 world.mine_nextLevel = mine.mine_nextLevel;
@@ -174,7 +178,7 @@ namespace StardewValleyMP.Packets
             //client.tempStopUpdating = true;
         }
 
-        private void debugStuff(GameLocation loc, string oldName)
+        private void debugStuff(GameLocation loc, string oldName, object extra)
         {
             Log.Async("FIXED:" + oldName + "->" + loc.name);
         }

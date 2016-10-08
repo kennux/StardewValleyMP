@@ -11,6 +11,7 @@ using StardewModdingAPI;
 using StardewValleyMP.Vanilla;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using xTile;
 
 namespace StardewValleyMP.Packets
 {
@@ -111,6 +112,8 @@ namespace StardewValleyMP.Packets
             }
 
             fixPetDuplicates(theirs);
+            
+            Multiplayer.fixLocations(theirs.locations, client.farmer, addFixedLocationToOurWorld, client );
 
             foreach (string mail in Multiplayer.checkMail)
             {
@@ -132,53 +135,85 @@ namespace StardewValleyMP.Packets
 
             client.stage = Server.Client.NetStage.WaitingForStart;
         }
-
-        private void addFixedLocationToOurWorld( GameLocation loc, string oldName )
+        
+        public static void addFixedLocationToOurWorld( GameLocation loc, string oldName, object extra )
         {
+            if (!Multiplayer.isPlayerUnique(oldName))
+                return;
+
+            if (SaveGame.loaded == null)
+            {
+                ( ( Server.Client ) extra ).addDuringLoading.Add(oldName, loc);
+                return;
+            }
+
             Log.Async("Adding: " + oldName + " -> " + loc.name + " (" + loc + ")");
-            if ( oldName != "FarmHouse" )
+            if ( oldName != "FarmHouse" && oldName != "Cellar" )
             {
                 Log.Async("READ THE BLOCK OF COMMENTS IN THE ABOVE FUNCTION");
                 return;
             }
 
-            if ( Multiplayer.isPlayerUnique( oldName ) )
+            bool found = false;
+            for ( int i = 0; i < Game1.locations.Count; ++i )
             {
-                bool found = false;
-                for ( int i = 0; i < Game1.locations.Count; ++i )
-                {
-                    if ( Game1.locations[ i ].name.ToLower().Equals( loc.name.ToLower() ) )
+                if ( Game1.locations[ i ].name.ToLower().Equals( loc.name.ToLower() ) )
+                {/*
+                    loc.farmers.AddRange(Game1.locations[i].farmers);
+                    Game1.locations[i].farmers.Clear();
+                    foreach (Farmer farmer in loc.farmers)
                     {
-                        loc.farmers.AddRange(Game1.locations[i].farmers);
-                        Game1.locations[i].farmers.Clear();
-                        foreach (Farmer farmer in loc.farmers)
-                        {
-                            farmer.currentLocation = loc;
-                        }
-                        Game1.locations[i] = loc;
-                        found = true;
-                        break;
+                        farmer.currentLocation = loc;
                     }
+                    Game1.locations[i] = loc;*/
+                    found = true;
+                    break;
                 }
-                if (!found) Game1.locations.Add(loc);
+            }
+            if (!found)
+            {
+                // Here, we're using new instances instead of the one that is a parameter.
+                // The reason for this is because a new one has the (Map, string) constructor called.
+                // While I could just load the map and set loc.map, the ^ constructor does some 
+                // other things as well (and who knows what else, depending on the GameLocation).
+                // I believe the default constructor is mainly used for supporting de/serialization.
+                // This also might be the reason that loadDataToLocations exists. It transfers the
+                // loaded data to a 'working' instance of GameLocation.
+                // Note that we don't need to do that here, since loadDataToLocations will be called
+                // later anyways.
+                if ( oldName == "FarmHouse" )
+                {
+                    Map expr_214 = Game1.content.Load<Map>("Maps\\FarmHouse");
+                    expr_214.LoadTileSheets(Game1.mapDisplayDevice);
+                    Game1.locations.Add(new FarmHouse(expr_214, loc.name));
+                }
+                else if (oldName == "Cellar")
+                {
+                    Game1.locations.Add(new Cellar(Game1.content.Load<Map>("Maps\\Cellar"), loc.name));
+                }
+            }
 
-                found = false;
-                for (int i = 0; i < SaveGame.loaded.locations.Count; ++i)
+            found = false;
+            for (int i = 0; i < SaveGame.loaded.locations.Count; ++i)
+            {
+                if (SaveGame.loaded.locations[i].name.ToLower().Equals( loc.name.ToLower() ) )
                 {
-                    if (SaveGame.loaded.locations[i].name.ToLower().Equals( loc.name.ToLower() ) )
+                    loc.farmers.AddRange(SaveGame.loaded.locations[i].farmers);
+                    SaveGame.loaded.locations[i].farmers.Clear();
+                    foreach ( Farmer farmer in loc.farmers )
                     {
-                        loc.farmers.AddRange(SaveGame.loaded.locations[i].farmers);
-                        SaveGame.loaded.locations[i].farmers.Clear();
-                        foreach ( Farmer farmer in loc.farmers )
-                        {
-                            farmer.currentLocation = loc;
-                        }
-                        SaveGame.loaded.locations[i] = loc;
-                        found = true;
-                        break;
+                        farmer.currentLocation = loc;
                     }
+                    SaveGame.loaded.locations[i] = loc;
+                    found = true;
+                    break;
                 }
-                if (!found) SaveGame.loaded.locations.Add(loc);
+            }
+            if (!found)
+            {
+                // This doesn't need the shenanigans the one in Game1.locations needs.
+                // Read the comments above for explanation.
+                SaveGame.loaded.locations.Add(loc);
             }
         }
         

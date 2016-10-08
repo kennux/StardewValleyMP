@@ -49,7 +49,7 @@ namespace StardewValleyMP
     class Multiplayer
     {
         public const string DEFAULT_PORT = "24644";
-        public const byte PROTOCOL_VERSION = 2;
+        public const byte PROTOCOL_VERSION = 3;
         public const bool COOP = true;
 
         public static Mode mode = Mode.Singleplayer;
@@ -184,6 +184,7 @@ namespace StardewValleyMP
         public static bool isPlayerUnique( string location )
         {
             if (location == "FarmHouse") return true;
+            if (location == "Cellar") return true;
             if (!Multiplayer.COOP)
             {
                 if (location == "Farm") return true;
@@ -221,8 +222,15 @@ namespace StardewValleyMP
         {
             if (loc == null) return loc;
 
-            Farmer me = SaveGame.loaded.player;
-            if (me == null) me = Game1.player;
+            Farmer me = NewLoadMenu.pendingSelected;
+            if (SaveGame.loaded != null && SaveGame.loaded.player != null)
+                me = SaveGame.loaded.player;
+            if (me == null && Game1.player != null)
+                me = Game1.player;
+            if ( me == null )
+            {
+                Log.Async("WARNING: processLocationNameForPlayerUnique called without us having a player");
+            }
 
             if ( loc == "BathHouse_Entry" || loc == "BathHouse_MensLocker" ||
                  loc == "BathHouse_WomensLocker" || loc == "BathHouse_Pool" )
@@ -276,7 +284,7 @@ namespace StardewValleyMP
         }
 
         // loc oldName
-        public static void fixLocations( List< GameLocation > locations, Farmer from, Action<GameLocation, string> onceFixed = null )
+        public static void fixLocations( List< GameLocation > locations, Farmer from, Action<GameLocation, string, object> onceFixed = null, object extra = null )
         {
             if (mode == Mode.Client) from = client.others[0];
 
@@ -302,7 +310,7 @@ namespace StardewValleyMP
                     }
                 }
 
-                if ( isPlayerUnique( oldName ) && onceFixed != null ) onceFixed( loc, oldName );
+                if ( isPlayerUnique( oldName ) && onceFixed != null ) onceFixed( loc, oldName, extra );
             }
         }
 
@@ -657,6 +665,11 @@ namespace StardewValleyMP
         public static void locationChange( GameLocation oldLoc, GameLocation newLoc )
         {
             string newLocName = getUniqueLocationName( newLoc );
+            if ( newLocName == "" )
+            {
+                // Not sure how this happened... But it did
+                return;
+            }
 
             Log.Async("(Me) " + SaveGame.loaded.player.name + " moved to " + newLocName + " (" + newLoc + ")");
             LocationPacket loc = new LocationPacket(getMyId(), newLocName);
@@ -731,6 +744,7 @@ namespace StardewValleyMP
         public static CoopUpdatePacket prevCoopState = null;
         public static bool hadDancePartner = false;
         public static string prevSpouse = null;
+        public static int prevBooks = 0;
         public static void doMyPlayerUpdates(byte id)
         {
             MovingStatePacket currMoving = new MovingStatePacket(id, Game1.player);
@@ -788,6 +802,12 @@ namespace StardewValleyMP
                 sendFunc(new SpousePacket((byte)(mode == Mode.Host ? 0 : client.id), prevSpouse));
             }
             prevSpouse = Game1.player.spouse;
+
+            if (Game1.player.archaeologyFound.ContainsKey(102) && Game1.player.archaeologyFound[102][0] != prevBooks)
+            {
+                sendFunc(new LostBooksPacket());
+            }
+            prevBooks = Game1.player.archaeologyFound.ContainsKey(102) ? Game1.player.archaeologyFound[102][0] : 0;
         }
     }
 }
